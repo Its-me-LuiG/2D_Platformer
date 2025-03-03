@@ -3,13 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Platformer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
-    <script src="https://unpkg.com/p5.play@3/lib/p5.play.js"></script>
+    <title>Ghost Jumper - 2D Platformer</title>
+    <!-- Load p5.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
+    <!-- No sound library for now to simplify -->
     <link rel="stylesheet" href="src/style.css">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #333;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            z-index: 1000;
+        }
+    </style>
 </head>
 <body>
+    <div id="loading">Loading game...</div>
+    
+    <script>
+        // Check if p5.js is loaded
+        window.addEventListener('load', function() {
+            console.log("Window loaded");
+            if (typeof p5 !== 'undefined') {
+                console.log("p5.js is loaded successfully");
+                document.getElementById('loading').style.display = 'none';
+            } else {
+                console.error("p5.js failed to load");
+                document.getElementById('loading').innerHTML = 'Error: p5.js failed to load. Please check your internet connection and try again.';
+            }
+        });
+    </script>
+    
     <script src="src/game.js"></script>
 </body>
 </html> 
