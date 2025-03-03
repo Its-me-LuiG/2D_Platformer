@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple 2D Platformer</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a2e;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 4px solid #e94560;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #333;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Loading game...</div>
+    
+    <script>
+        // Check if p5.js is loaded
+        window.addEventListener('load', function() {
+            console.log("Window loaded");
+            if (typeof p5 !== 'undefined') {
+                console.log("p5.js is loaded successfully");
+                document.getElementById('loading').style.display = 'none';
+            } else {
+                console.error("p5.js failed to load");
+                document.getElementById('loading').innerHTML = 'Error: p5.js failed to load. Please check your internet connection and try again.';
+            }
+        });
+        
+        // Game code
+        console.log("Game script loaded and running!");
+
+        let player;
+        let platforms = [];
+        let coins = [];
+        let score = 0;
+
+        // Add a global error handler
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error("Global error caught:", message);
+            console.error("Source:", source);
+            console.error("Line:", lineno, "Column:", colno);
+            console.error("Error object:", error);
+            
+            // Display error on screen if canvas exists
+            if (typeof background === 'function') {
+                background(255, 0, 0);
+                fill(255);
+                textSize(16);
+                text("Error: " + message, 20, 30);
+                text("Check browser console for details", 20, 50);
+            }
+            
+            return true; // Prevents the default error handling
+        };
+
+        function setup() {
+            console.log("Setup function called");
+            createCanvas(800, 400);
+            console.log("Canvas created with dimensions:", width, "x", height);
+            
+            // Create player
+            player = {
+                x: 100,
+                y: 300,
+                width: 30,
+                height: 30,
+                velocityX: 0,
+                velocityY: 0,
+                isOnGround: false,
+                color: color(255, 0, 0)
+            };
+            console.log("Player created at position:", player.x, player.y);
+            
+            // Create ground platform
+            platforms.push({
+                x: width/2,
+                y: height - 10,
+                width: width,
+                height: 20,
+                color: color(0, 200, 0)
+            });
+            
+            // Create additional platforms
+            platforms.push({
+                x: 200,
+                y: 300,
+                width: 100,
+                height: 20,
+                color: color(0, 150, 0)
+            });
+            
+            platforms.push({
+                x: 400,
+                y: 250,
+                width: 100,
+                height: 20,
+                color: color(0, 150, 0)
+            });
+            
+            platforms.push({
+                x: 600,
+                y: 200,
+                width: 100,
+                height: 20,
+                color: color(0, 150, 0)
+            });
+            
+            console.log("Created", platforms.length, "platforms");
+            
+            // Create coins
+            for (let i = 0; i < 5; i++) {
+                coins.push({
+                    x: 150 + i * 120,
+                    y: 150,
+                    radius: 10,
+                    collected: false,
+                    color: color(255, 215, 0)
+                });
+            }
+            console.log("Created", coins.length, "coins");
+        }
+
+        function draw() {
+            // Clear the canvas
+            background(135, 206, 235); // Sky blue
+            
+            // Draw platforms
+            for (let platform of platforms) {
+                fill(platform.color);
+                noStroke();
+                rectMode(CENTER);
+                rect(platform.x, platform.y, platform.width, platform.height);
+            }
+            
+            // Draw coins
+            for (let coin of coins) {
+                if (!coin.collected) {
+                    fill(coin.color);
+                    noStroke();
+                    circle(coin.x, coin.y, coin.radius * 2);
+                    
+                    // Check collision with player
+                    let dx = coin.x - player.x;
+                    let dy = coin.y - player.y;
+                    let distance = sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < coin.radius + player.width/2) {
+                        coin.collected = true;
+                        score += 10;
+                        console.log("Coin collected! Score:", score);
+                    }
+                }
+            }
+            
+            // Update player
+            updatePlayer();
+            
+            // Draw player
+            fill(player.color);
+            noStroke();
+            rectMode(CENTER);
+            rect(player.x, player.y, player.width, player.height);
+            
+            // Display score
+            fill(0);
+            textSize(20);
+            textAlign(LEFT);
+            text('Score: ' + score, 20, 30);
+            
+            // Display controls
+            fill(0);
+            textSize(14);
+            text('Controls: Arrow Keys to move, Space to jump', 20, height - 20);
+        }
+
+        function updatePlayer() {
+            // Apply gravity
+            player.velocityY += 0.5;
+            
+            // Handle input
+            if (keyIsDown(LEFT_ARROW)) {
+                player.velocityX = -5;
+            } else if (keyIsDown(RIGHT_ARROW)) {
+                player.velocityX = 5;
+            } else {
+                player.velocityX = 0;
+            }
+            
+            // Jump when space is pressed and player is on ground
+            if (keyIsDown(32) && player.isOnGround) { // 32 is spacebar
+                player.velocityY = -10;
+                player.isOnGround = false;
+            }
+            
+            // Update position
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+            
+            // Check platform collisions
+            player.isOnGround = false;
+            for (let platform of platforms) {
+                // Calculate the edges of the platform
+                let platformLeft = platform.x - platform.width/2;
+                let platformRight = platform.x + platform.width/2;
+                let platformTop = platform.y - platform.height/2;
+                let platformBottom = platform.y + platform.height/2;
+                
+                // Calculate the edges of the player
+                let playerLeft = player.x - player.width/2;
+                let playerRight = player.x + player.width/2;
+                let playerTop = player.y - player.height/2;
+                let playerBottom = player.y + player.height/2;
+                
+                // Check for collision
+                if (playerRight > platformLeft && 
+                    playerLeft < platformRight && 
+                    playerBottom > platformTop && 
+                    playerTop < platformBottom) {
+                    
+                    // Coming from above
+                    if (player.velocityY > 0 && playerBottom - player.velocityY <= platformTop) {
+                        player.y = platformTop - player.height/2;
+                        player.velocityY = 0;
+                        player.isOnGround = true;
+                    }
+                }
+            }
+            
+            // Keep player in bounds
+            if (player.x < player.width/2) {
+                player.x = player.width/2;
+            }
+            if (player.x > width - player.width/2) {
+                player.x = width - player.width/2;
+            }
+            
+            // Reset player if they fall off the bottom
+            if (player.y > height + 100) {
+                player.x = 100;
+                player.y = 300;
+                player.velocityY = 0;
+                console.log("Player fell off the screen and was reset");
+            }
+        }
+
+        // Handle key release
+        function keyReleased() {
+            return false;
+        }
+    </script>
+</body>
+</html> 
